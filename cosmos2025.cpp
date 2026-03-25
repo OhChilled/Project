@@ -3,19 +3,55 @@
 #include <windows.h>
 #include "library.h"
 
+constexpr double OMEGA = 0.001;
+constexpr double INITIAL_VELOCITY = 0.01;
+constexpr double INITIAL_POSITION = 10.0;
+constexpr double TIME_START = 0.0;
+constexpr double TIME_STEP = 0.01;
+constexpr double TIME_END = 7.0;
+constexpr double DOCKING_RADIUS = 1.0;
+constexpr double HALF = 2.0;
+constexpr double RK_DIVISOR = 6.0;
+constexpr double RK_WEIGHT = 2.0;
+
 int main() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
-    // Параметри моделі (зафіксовані як у твоєму коді)
+    // Параметри моделі
     double omega = 0.001;
-    double ax, ay;
+    double ax;
+    double ay;
 
     // Оголошення та ініціалізація змінних
-    double x0, x00 = 0.01, x1, x10 = 10, y0, y00 = 0.01, y1, y10 = 10;
-    double k1, k2, k3, k4, g1, g2, g3, g4;
-    double r1, r2, r3, r4, w1, w2, w3, w4;
-    double t, t0 = 0, h = 0.01, tk = 7;
+    double x0;
+    double x00 = INITIAL_VELOCITY;
+    double x1;
+    double x10 = INITIAL_POSITION;
+    double y0;
+    double y00 = INITIAL_VELOCITY;
+    double y1;
+    double y10 = INITIAL_POSITION;
+    double k1;
+    double k2;
+    double k3;
+    double k4;
+    double g1;
+    double g2;
+    double g3;
+    double g4;
+    double r1;
+    double r2;
+    double r3;
+    double r4;
+    double w1;
+    double w2;
+    double w3;
+    double w4;
+    double t;
+    double t0 = TIME_START;
+    double h = TIME_STEP;
+    double tk = TIME_END;
     FILE* p;
 
     // Відкриття файлу для запису результатів
@@ -43,7 +79,7 @@ int main() {
     fprintf(p, "Крок h=%lf, Кінцевий час tk=%lf\n\n", h, tk);
     fprintf(p, "t\tx1\tx0\ty1\ty0\tR\n");
 
-    const double Rcrit = 1.0;  // фіксований поріг стикування як у твоєму коді
+    const double Rcrit = DOCKING_RADIUS;  // фіксований поріг стикування як у твоєму коді
 
     // Основний цикл інтегрування
     while (t <= tk) {
