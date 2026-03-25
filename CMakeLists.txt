@@ -31,3 +31,10 @@ target_link_libraries(unit_tests PRIVATE GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(unit_tests)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+if(CLANG_TIDY_EXE)
+    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE})
+endif()

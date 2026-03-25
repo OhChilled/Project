@@ -75,7 +75,7 @@ sudo apt install git cmake g++
 
 ```
 git clone https://github.com/OhChilled/Project.git
-cd Project
+cd untitled2
 ```
 
 ## Збірка проєкту
@@ -146,6 +146,16 @@ cmake --build .
 cd build
 ctest
 ```
+## Linting
+
+Для статичного аналізу коду використовується clang-tidy.
+Для форматування коду використовується clang-format.
+
+Приклад запуску:
+
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build
+clang-tidy cosmos2025.cpp library.cpp -- -I.
 
 ## Автор
 
