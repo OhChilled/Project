@@ -1,0 +1,11 @@
+Checks: >
+  clang-analyzer-*,
+  bugprone-*,
+  readability-magic-numbers,
+  readability-math-missing-parentheses,
+  readability-isolate-declaration,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: file

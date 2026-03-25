@@ -5,3 +5,5 @@ build/
 *.log
 *.o
 *.out
+*.dan
+compile_commands.json
