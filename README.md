@@ -94,13 +94,13 @@ cmake --build .
 ### Linux
 
 ```
-./Project
+./untitled2
 ```
 
 ### Windows
 
 ```
-.\Project.exe
+.\untitled2.exe
 ```
 
 ## Запуск у режимі розробки
