@@ -1,4 +1,6 @@
-#pragma once
+#ifndef LIBRARY_H
+#define LIBRARY_H
+
 #include <cmath>
 
 struct Params {
@@ -28,3 +30,5 @@ bool shouldDock(double R, double Rcrit);
 
 // 1 крок RK4 (R1.2)
 State rk4Step(const State& s, const Params& p);
+
+#endif // LIBRARY_H

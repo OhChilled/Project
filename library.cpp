@@ -1,15 +1,23 @@
 #include "library.h"
 
+namespace {
+constexpr double CORIOLIS_FACTOR = 2.0;
+constexpr double GRAVITY_FACTOR = 3.0;
+constexpr double HALF = 2.0;
+constexpr double RK_DIVISOR = 6.0;
+constexpr double RK_WEIGHT = 2.0;
+}
+
 double fx(double omega, double ax, double y0) {
-    return 2.0 * omega * y0 + ax;
+    return (CORIOLIS_FACTOR * omega * y0) + ax;
 }
 
 double fy(double omega, double ay, double x0, double y1) {
-    return -2.0 * omega * x0 + 3.0 * omega * omega * y1 + ay;
+    return -(CORIOLIS_FACTOR * omega * x0) + (GRAVITY_FACTOR * omega * omega * y1) + ay;
 }
 
 double calcR(double x1, double y1) {
-    return std::sqrt(x1 * x1 + y1 * y1);
+    return std::sqrt((x1 * x1) + (y1 * y1));
 }
 
 bool shouldDock(double R, double Rcrit) {

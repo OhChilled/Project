@@ -90,10 +90,10 @@ int main() {
         w1 = y0;
 
         // Другий крок
-        k2 = fx(omega, ax, y0 + h * r1 / 2.0);
-        g2 = x0 + h * k1 / 2.0;
-        r2 = fy(omega, ay, x0 + h * k1 / 2.0, y1 + h * w1 / 2.0);
-        w2 = y0 + h * r1 / 2.0;
+       k2 = fx(omega, ax, y0 + (h * r1) / HALF);
+       g2 = x0 + (h * k1) / HALF;
+       r2 = fy(omega, ay, x0 + (h * k1) / HALF, y1 + (h * w1) / HALF);
+       w2 = y0 + (h * r1) / HALF;
 
         // Третій крок
         k3 = fx(omega, ax, y0 + h * r2 / 2.0);
@@ -108,10 +108,10 @@ int main() {
         w4 = y0 + h * r3;
 
         // Оновлення значень змінних
-        y0 += h * (r1 + 2 * r2 + 2 * r3 + r4) / 6.0;
-        y1 += h * (w1 + 2 * w2 + 2 * w3 + w4) / 6.0;
-        x0 += h * (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
-        x1 += h * (g1 + 2 * g2 + 2 * g3 + g4) / 6.0;
+        y0 += (h * (r1 + RK_WEIGHT * r2 + RK_WEIGHT * r3 + r4)) / RK_DIVISOR;
+        y1 += (h * (w1 + RK_WEIGHT * w2 + RK_WEIGHT * w3 + w4)) / RK_DIVISOR;
+        x0 += (h * (k1 + RK_WEIGHT * k2 + RK_WEIGHT * k3 + k4)) / RK_DIVISOR;
+        x1 += (h * (g1 + RK_WEIGHT * g2 + RK_WEIGHT * g3 + g4)) / RK_DIVISOR;
         t += h;
 
         // Обчислення поточної відстані (вже через library)
