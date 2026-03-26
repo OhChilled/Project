@@ -19,3 +19,15 @@
 ```bash
 clang-tidy cosmos2025.cpp library.cpp -- -I.
 ```
+
+Для форматування:
+
+```bash
+clang-format -i *.cpp *.h
+```
+
+Для комплексної перевірки:
+
+```bash
+scripts/check.bat
+```

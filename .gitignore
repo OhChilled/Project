@@ -6,4 +6,6 @@ build/
 *.o
 *.out
 *.dan
+Project/
+Project_backup/
 compile_commands.json
