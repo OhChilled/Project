@@ -1,0 +1,15 @@
+#!/bin/sh
+
+echo "Running clang-format..."
+clang-format -i *.cpp *.h
+
+echo "Running clang-tidy..."
+clang-tidy cosmos2025.cpp library.cpp -- -I.
+
+if [ $? -ne 0 ]; then
+  echo "Lint failed. Commit aborted."
+  exit 1
+fi
+
+echo "All checks passed."
+exit 0

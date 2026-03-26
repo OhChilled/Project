@@ -6,25 +6,19 @@ constexpr double GRAVITY_FACTOR = 3.0;
 constexpr double HALF = 2.0;
 constexpr double RK_DIVISOR = 6.0;
 constexpr double RK_WEIGHT = 2.0;
-}
+} // namespace
 
-double fx(double omega, double ax, double y0) {
-    return (CORIOLIS_FACTOR * omega * y0) + ax;
-}
+double fx(double omega, double ax, double y0) { return (CORIOLIS_FACTOR * omega * y0) + ax; }
 
 double fy(double omega, double ay, double x0, double y1) {
     return -(CORIOLIS_FACTOR * omega * x0) + (GRAVITY_FACTOR * omega * omega * y1) + ay;
 }
 
-double calcR(double x1, double y1) {
-    return std::sqrt((x1 * x1) + (y1 * y1));
-}
+double calcR(double x1, double y1) { return std::sqrt((x1 * x1) + (y1 * y1)); }
 
-bool shouldDock(double R, double Rcrit) {
-    return R <= Rcrit;
-}
+bool shouldDock(double R, double Rcrit) { return R <= Rcrit; }
 
-State rk4Step(const State& s, const Params& p) {
+State rk4Step(const State &s, const Params &p) {
     const double h = p.h;
 
     double k1 = fx(p.omega, p.ax, s.y0);

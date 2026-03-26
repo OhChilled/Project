@@ -38,3 +38,14 @@ find_program(CLANG_TIDY_EXE NAMES clang-tidy)
 if(CLANG_TIDY_EXE)
     set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE})
 endif()
+
+add_custom_target(lint
+    COMMAND clang-tidy ${CMAKE_SOURCE_DIR}/cosmos2025.cpp ${CMAKE_SOURCE_DIR}/library.cpp -- -I${CMAKE_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
+if(MSVC)
+    add_compile_options(/W4)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()

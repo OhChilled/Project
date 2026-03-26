@@ -1,7 +1,7 @@
-﻿#include <cmath>
+﻿#include "library.h"
+#include <cmath>
 #include <cstdio>
 #include <windows.h>
-#include "library.h"
 
 constexpr double OMEGA = 0.001;
 constexpr double INITIAL_VELOCITY = 0.01;
@@ -52,7 +52,7 @@ int main() {
     double t0 = TIME_START;
     double h = TIME_STEP;
     double tk = TIME_END;
-    FILE* p;
+    FILE *p;
 
     // Відкриття файлу для запису результатів
     fopen_s(&p, "cosm2425.dan", "w");
@@ -67,10 +67,10 @@ int main() {
 
     // Ініціалізація початкових умов
     t = t0;
-    x0 = x00;  // початкова швидкість по x
-    x1 = x10;  // початкова координата x
-    y0 = y00;  // початкова швидкість по y
-    y1 = y10;  // початкова координата y
+    x0 = x00; // початкова швидкість по x
+    x1 = x10; // початкова координата x
+    y0 = y00; // початкова швидкість по y
+    y1 = y10; // початкова координата y
 
     // Вивід заголовка у файл
     fprintf(p, "Параметри моделювання:\n");
@@ -79,7 +79,7 @@ int main() {
     fprintf(p, "Крок h=%lf, Кінцевий час tk=%lf\n\n", h, tk);
     fprintf(p, "t\tx1\tx0\ty1\ty0\tR\n");
 
-    const double Rcrit = DOCKING_RADIUS;  // фіксований поріг стикування як у твоєму коді
+    const double Rcrit = DOCKING_RADIUS; // фіксований поріг стикування як у твоєму коді
 
     // Основний цикл інтегрування
     while (t <= tk) {
@@ -90,16 +90,16 @@ int main() {
         w1 = y0;
 
         // Другий крок
-       k2 = fx(omega, ax, y0 + ((h * r1) / HALF));
-       g2 = x0 + ((h * k1) / HALF);
-       r2 = fy(omega, ay, x0 + ((h * k1) / HALF), y1 + ((h * w1) / HALF));
-       w2 = y0 + ((h * r1) / HALF);
+        k2 = fx(omega, ax, y0 + ((h * r1) / HALF));
+        g2 = x0 + ((h * k1) / HALF);
+        r2 = fy(omega, ay, x0 + ((h * k1) / HALF), y1 + ((h * w1) / HALF));
+        w2 = y0 + ((h * r1) / HALF);
 
         // Третій крок
-       k3 = fx(omega, ax, y0 + ((h * r2) / HALF));
-       g3 = x0 + ((h * k2) / HALF);
-       r3 = fy(omega, ay, x0 + ((h * k2) / HALF), y1 + ((h * w2) / HALF));
-       w3 = y0 + ((h * r2) / HALF);
+        k3 = fx(omega, ax, y0 + ((h * r2) / HALF));
+        g3 = x0 + ((h * k2) / HALF);
+        r3 = fy(omega, ay, x0 + ((h * k2) / HALF), y1 + ((h * w2) / HALF));
+        w3 = y0 + ((h * r2) / HALF);
 
         // Четвертий крок
         k4 = fx(omega, ax, y0 + (h * r3));
@@ -118,8 +118,7 @@ int main() {
         double R = calcR(x1, y1);
 
         // Запис результатів у файл
-        fprintf(p, "%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\n",
-                t, x1, x0, y1, y0, R);
+        fprintf(p, "%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\n", t, x1, x0, y1, y0, R);
 
         // Перевірка умови стикування (вже через library)
         if (shouldDock(R, Rcrit)) {
