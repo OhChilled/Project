@@ -19,7 +19,7 @@ int main() {
     SetConsoleCP(CP_UTF8);
 
     // Параметри моделі
-    double omega = 0.001;
+    double omega = OMEGA;
     double ax;
     double ay;
 
@@ -90,28 +90,28 @@ int main() {
         w1 = y0;
 
         // Другий крок
-       k2 = fx(omega, ax, y0 + (h * r1) / HALF);
-       g2 = x0 + (h * k1) / HALF;
-       r2 = fy(omega, ay, x0 + (h * k1) / HALF, y1 + (h * w1) / HALF);
-       w2 = y0 + (h * r1) / HALF;
+       k2 = fx(omega, ax, y0 + ((h * r1) / HALF));
+       g2 = x0 + ((h * k1) / HALF);
+       r2 = fy(omega, ay, x0 + ((h * k1) / HALF), y1 + ((h * w1) / HALF));
+       w2 = y0 + ((h * r1) / HALF);
 
         // Третій крок
-        k3 = fx(omega, ax, y0 + h * r2 / 2.0);
-        g3 = x0 + h * k2 / 2.0;
-        r3 = fy(omega, ay, x0 + h * k2 / 2.0, y1 + h * w2 / 2.0);
-        w3 = y0 + h * r2 / 2.0;
+       k3 = fx(omega, ax, y0 + ((h * r2) / HALF));
+       g3 = x0 + ((h * k2) / HALF);
+       r3 = fy(omega, ay, x0 + ((h * k2) / HALF), y1 + ((h * w2) / HALF));
+       w3 = y0 + ((h * r2) / HALF);
 
         // Четвертий крок
-        k4 = fx(omega, ax, y0 + h * r3);
-        g4 = x0 + h * k3;
-        r4 = fy(omega, ay, x0 + h * k3, y1 + h * w3);
-        w4 = y0 + h * r3;
+        k4 = fx(omega, ax, y0 + (h * r3));
+        g4 = x0 + (h * k3);
+        r4 = fy(omega, ay, x0 + (h * k3), y1 + (h * w3));
+        w4 = y0 + (h * r3);
 
         // Оновлення значень змінних
-        y0 += (h * (r1 + RK_WEIGHT * r2 + RK_WEIGHT * r3 + r4)) / RK_DIVISOR;
-        y1 += (h * (w1 + RK_WEIGHT * w2 + RK_WEIGHT * w3 + w4)) / RK_DIVISOR;
-        x0 += (h * (k1 + RK_WEIGHT * k2 + RK_WEIGHT * k3 + k4)) / RK_DIVISOR;
-        x1 += (h * (g1 + RK_WEIGHT * g2 + RK_WEIGHT * g3 + g4)) / RK_DIVISOR;
+        y0 += (h * (r1 + (RK_WEIGHT * r2) + (RK_WEIGHT * r3) + r4)) / RK_DIVISOR;
+        y1 += (h * (w1 + (RK_WEIGHT * w2) + (RK_WEIGHT * w3) + w4)) / RK_DIVISOR;
+        x0 += (h * (k1 + (RK_WEIGHT * k2) + (RK_WEIGHT * k3) + k4)) / RK_DIVISOR;
+        x1 += (h * (g1 + (RK_WEIGHT * g2) + (RK_WEIGHT * g3) + g4)) / RK_DIVISOR;
         t += h;
 
         // Обчислення поточної відстані (вже через library)
