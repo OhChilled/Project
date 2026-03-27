@@ -254,6 +254,16 @@ int main(int argc, char *argv[]) {
         const auto appDuration =
             std::chrono::duration_cast<std::chrono::milliseconds>(appEnd - appStart);
 
+        spdlog::info(
+            "PERF SUMMARY | operation_id={} | iterations={} | simulation_ms={} | total_ms={} | rk4_ns={} | calcR_ns={} | shouldDock_ns={}",
+            context.operationId,
+            iterationCount,
+            simulationDuration.count(),
+            appDuration.count(),
+            rk4StepTimeNs,
+            calcRTimeNs,
+            shouldDockTimeNs);
+
         spdlog::info("Загальний час виконання програми: {} ms", appDuration.count());
         std::cout << "Total execution time: " << appDuration.count() << " ms\n";
 
