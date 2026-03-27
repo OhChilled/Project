@@ -7,6 +7,7 @@
 #include "user_messages.h"
 #include "reporting.h"
 
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <exception>
@@ -61,6 +62,7 @@ int main(int argc, char *argv[]) {
     spdlog::info("Operation ID: {}", context.operationId);
     std::cout << usermsg::getOperationIdMessage(language, context.operationId) << '\n';
 
+    const auto appStart = std::chrono::high_resolution_clock::now();
     try {
         context.stage = "input";
         spdlog::info("Початок введення параметрів керування");
@@ -122,12 +124,22 @@ int main(int argc, char *argv[]) {
 
         context.stage = "simulation";
         spdlog::info("Початок чисельного моделювання");
+        const auto simulationStart = std::chrono::high_resolution_clock::now();
 
         bool docked = false;
 
+        long long rk4StepTimeNs = 0;
+        long long calcRTimeNs = 0;
+        long long shouldDockTimeNs = 0;
+        int iterationCount = 0;
+
         while (context.currentTime + context.runtimeParams.h <= TIME_END) {
+            const auto rk4Start = std::chrono::high_resolution_clock::now();
             context.currentState = rk4Step(context.currentState, context.runtimeParams);
+            const auto rk4End = std::chrono::high_resolution_clock::now();
+            rk4StepTimeNs += std::chrono::duration_cast<std::chrono::nanoseconds>(rk4End - rk4Start).count();
             context.currentTime += context.runtimeParams.h;
+            ++iterationCount;
 
             if (!std::isfinite(context.currentState.x1) ||
                 !std::isfinite(context.currentState.x0) ||
@@ -139,7 +151,10 @@ int main(int argc, char *argv[]) {
                     "Стан системи містить нечислове або нескінченне значення");
             }
 
+            const auto calcRStart = std::chrono::high_resolution_clock::now();
             const double distance = calcR(context.currentState.x1, context.currentState.y1);
+            const auto calcREnd = std::chrono::high_resolution_clock::now();
+            calcRTimeNs += std::chrono::duration_cast<std::chrono::nanoseconds>(calcREnd - calcRStart).count();
 
             if (!std::isfinite(distance)) {
                 throw AppError(
@@ -166,7 +181,12 @@ int main(int argc, char *argv[]) {
                     context.currentTime),
                 distance);
 
-            if (shouldDock(distance, context.runtimeParams.Rcrit)) {
+            const auto shouldDockStart = std::chrono::high_resolution_clock::now();
+            const bool dockingNow = shouldDock(distance, context.runtimeParams.Rcrit);
+            const auto shouldDockEnd = std::chrono::high_resolution_clock::now();
+            shouldDockTimeNs += std::chrono::duration_cast<std::chrono::nanoseconds>(shouldDockEnd - shouldDockStart).count();
+
+            if (dockingNow) {
                 docked = true;
                 context.stage = "docking";
                 spdlog::info(
@@ -187,7 +207,10 @@ int main(int argc, char *argv[]) {
 
         if (!docked) {
             context.stage = "finish_without_docking";
+            const auto calcRStart = std::chrono::high_resolution_clock::now();
             const double finalDistance = calcR(context.currentState.x1, context.currentState.y1);
+            const auto calcREnd = std::chrono::high_resolution_clock::now();
+            calcRTimeNs += std::chrono::duration_cast<std::chrono::nanoseconds>(calcREnd - calcRStart).count();
             spdlog::warn(
                 "Стикування не відбулося: {}; R={:.3f}",
                 errors::buildExecutionContext(
@@ -202,6 +225,22 @@ int main(int argc, char *argv[]) {
             std::fprintf(file, "\n%s\n", failureMessage.c_str());
         }
 
+        const auto simulationEnd = std::chrono::high_resolution_clock::now();
+        const auto simulationDuration =
+            std::chrono::duration_cast<std::chrono::milliseconds>(simulationEnd - simulationStart);
+
+        spdlog::info("Кількість ітерацій: {}", iterationCount);
+        spdlog::info("Сумарний час rk4Step: {} ns", rk4StepTimeNs);
+        spdlog::info("Сумарний час calcR: {} ns", calcRTimeNs);
+        spdlog::info("Сумарний час shouldDock: {} ns", shouldDockTimeNs);
+
+        std::cout << "Iterations: " << iterationCount << '\n';
+        std::cout << "rk4Step total time: " << rk4StepTimeNs << " ns\n";
+        std::cout << "calcR total time: " << calcRTimeNs << " ns\n";
+        std::cout << "shouldDock total time: " << shouldDockTimeNs << " ns\n";
+
+        spdlog::info("Час виконання моделювання: {} ms", simulationDuration.count());
+        std::cout << "Simulation time: " << simulationDuration.count() << " ms\n";
         context.stage = "shutdown";
 
         std::fclose(file);
@@ -209,6 +248,13 @@ int main(int argc, char *argv[]) {
 
         spdlog::info("Результати збережено у файлі cosm2425.dan");
         spdlog::info("Програма завершила роботу успішно");
+        const auto appEnd = std::chrono::high_resolution_clock::now();
+        const auto appDuration =
+            std::chrono::duration_cast<std::chrono::milliseconds>(appEnd - appStart);
+
+        spdlog::info("Загальний час виконання програми: {} ms", appDuration.count());
+        std::cout << "Total execution time: " << appDuration.count() << " ms\n";
+
         return 0;
     } catch (const AppError &e) {
         spdlog::error(
