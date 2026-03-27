@@ -4,12 +4,16 @@ project(untitled2 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_subdirectory(spdlog-1.x)
+
 # ---- Main app ----
 add_executable(untitled2
         cosmos2025.cpp
         library.cpp
+        logger.cpp
 )
 target_include_directories(untitled2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(untitled2 PRIVATE spdlog::spdlog)
 
 # ---- Tests (GoogleTest) ----
 include(FetchContent)
@@ -40,7 +44,13 @@ if(CLANG_TIDY_EXE)
 endif()
 
 add_custom_target(lint
-    COMMAND clang-tidy ${CMAKE_SOURCE_DIR}/cosmos2025.cpp ${CMAKE_SOURCE_DIR}/library.cpp -- -I${CMAKE_SOURCE_DIR}
+    COMMAND clang-tidy
+        ${CMAKE_SOURCE_DIR}/cosmos2025.cpp
+        ${CMAKE_SOURCE_DIR}/library.cpp
+        ${CMAKE_SOURCE_DIR}/logger.cpp
+        --
+        -I${CMAKE_SOURCE_DIR}
+        -I${CMAKE_SOURCE_DIR}/spdlog-1.x/include
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
