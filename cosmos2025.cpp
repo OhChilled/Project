@@ -172,14 +172,16 @@ int main(int argc, char *argv[]) {
                          context.currentState.y0,
                          distance);
 
-            spdlog::debug(
-                "Крок моделювання: {}; R={:.3f}",
-                errors::buildExecutionContext(
-                    context.stage,
-                    context.runtimeParams,
-                    context.currentState,
-                    context.currentTime),
-                distance);
+            if (iterationCount % 50 == 0) {
+                spdlog::debug(
+                    "Крок моделювання: {}; R={:.3f}",
+                    errors::buildExecutionContext(
+                        context.stage,
+                        context.runtimeParams,
+                        context.currentState,
+                        context.currentTime),
+                    distance);
+            }
 
             const auto shouldDockStart = std::chrono::high_resolution_clock::now();
             const bool dockingNow = shouldDock(distance, context.runtimeParams.Rcrit);
