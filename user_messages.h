@@ -27,6 +27,7 @@ std::string getDockingFailureMessage(Language language, double distance);
 
 std::string getOperationIdMessage(Language language, const std::string &operationId);
 
+std::string getReportSavedMessage(Language language, const std::string &errorId);
 } // namespace usermsg
 
 #endif // USER_MESSAGES_H

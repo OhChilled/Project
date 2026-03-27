@@ -5,6 +5,7 @@
 #include "localization.h"
 #include "logger.h"
 #include "user_messages.h"
+#include "reporting.h"
 
 #include <cmath>
 #include <cstdio>
@@ -226,11 +227,19 @@ int main(int argc, char *argv[]) {
             std::fclose(file);
         }
 
+        reporting::saveErrorReport(
+            e.errorId(),
+            e.userMessage(),
+            logLevel,
+            language,
+            context);
+
         std::cerr << usermsg::buildFullUserErrorMessage(
                          language,
                          e.userMessage(),
                          e.errorId())
                   << '\n';
+        std::cerr << usermsg::getReportSavedMessage(language, e.errorId()) << '\n';
         return 2;
     } catch (const std::exception &e) {
         const std::string errorId = errors::generateErrorId();

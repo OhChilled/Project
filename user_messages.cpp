@@ -125,4 +125,11 @@ std::string getOperationIdMessage(Language language, const std::string &operatio
     return "Ідентифікатор операції: " + operationId;
 }
 
+std::string getReportSavedMessage(Language language, const std::string &errorId) {
+    if (language == Language::English) {
+        return "A technical error report was saved to reports/error_report_" + errorId + ".txt";
+    }
+    return "Технічний звіт про помилку збережено у файлі reports/error_report_" + errorId + ".txt";
+}
+
 } // namespace usermsg
