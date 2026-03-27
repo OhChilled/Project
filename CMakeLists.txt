@@ -12,6 +12,8 @@ add_executable(untitled2
         library.cpp
         logger.cpp
         error_utils.cpp
+        localization.cpp
+        user_messages.cpp
 )
 target_include_directories(untitled2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(untitled2 PRIVATE spdlog::spdlog)

@@ -2,7 +2,9 @@
 #include "errors.h"
 #include "execution_context.h"
 #include "library.h"
+#include "localization.h"
 #include "logger.h"
+#include "user_messages.h"
 
 #include <cmath>
 #include <cstdio>
@@ -25,10 +27,13 @@ int main(int argc, char *argv[]) {
     SetConsoleCP(CP_UTF8);
 
     const std::string logLevel = logging::resolveLogLevel(argc, argv);
+    const Language language = localization::resolveLanguage(argc, argv);
+
     logging::initLogger(logLevel);
 
     spdlog::info("Програма моделювання запущена");
     spdlog::info("Встановлений мінімальний рівень логування: {}", logLevel);
+    spdlog::info("Вибрана мова інтерфейсу: {}", localization::toString(language));
 
     FILE *file = nullptr;
 
@@ -54,12 +59,12 @@ int main(int argc, char *argv[]) {
     try {
         context.stage = "input";
         spdlog::info("Початок введення параметрів керування");
-        std::cout << "Введіть ax, ay: ";
+        std::cout << usermsg::getInputPrompt(language);
 
         if (!(std::cin >> context.runtimeParams.ax >> context.runtimeParams.ay)) {
             throw AppError(
                 errors::generateErrorId(),
-                "Не вдалося зчитати параметри керування.",
+                usermsg::getInvalidInputMessage(language),
                 "Помилка введення параметрів ax та ay");
         }
 
@@ -68,25 +73,26 @@ int main(int argc, char *argv[]) {
         if (context.runtimeParams.h <= 0.0) {
             throw AppError(
                 errors::generateErrorId(),
-                "Некоректний крок моделювання.",
+                usermsg::getInvalidStepMessage(language),
                 "Параметр h має бути більшим за 0");
         }
 
         if (context.runtimeParams.Rcrit <= 0.0) {
             throw AppError(
                 errors::generateErrorId(),
-                "Некоректний радіус стикування.",
+                usermsg::getInvalidDockingRadiusMessage(language),
                 "Параметр Rcrit має бути більшим за 0");
         }
 
-        spdlog::info("Параметри ініціалізовано: {}", errors::buildParamsContext(context.runtimeParams));
+        spdlog::info("Параметри ініціалізовано: {}",
+                     errors::buildParamsContext(context.runtimeParams));
 
         context.stage = "open_output_file";
         fopen_s(&file, "cosm2425.dan", "w");
         if (file == nullptr) {
             throw AppError(
                 errors::generateErrorId(),
-                "Не вдалося відкрити файл результатів.",
+                usermsg::getOutputFileOpenMessage(language),
                 "Не вдалося відкрити файл cosm2425.dan для запису");
         }
 
@@ -123,7 +129,7 @@ int main(int argc, char *argv[]) {
                 !std::isfinite(context.currentState.y0)) {
                 throw AppError(
                     errors::generateErrorId(),
-                    "Під час моделювання виникла чисельна помилка.",
+                    usermsg::getNumericFailureMessage(language),
                     "Стан системи містить нечислове або нескінченне значення");
             }
 
@@ -132,7 +138,7 @@ int main(int argc, char *argv[]) {
             if (!std::isfinite(distance)) {
                 throw AppError(
                     errors::generateErrorId(),
-                    "Під час обчислення відстані сталася помилка.",
+                    usermsg::getDistanceFailureMessage(language),
                     "Обчислена відстань R не є коректним числом");
             }
 
@@ -165,8 +171,10 @@ int main(int argc, char *argv[]) {
                         context.currentState,
                         context.currentTime),
                     distance);
-                std::printf("Стикування відбулося в момент t = %.3lf с\n", context.currentTime);
-                std::fprintf(file, "\nСтикування відбулося в момент t = %.3lf с\n", context.currentTime);
+                const std::string dockingMessage =
+                    usermsg::getDockingSuccessMessage(language, context.currentTime);
+                std::cout << dockingMessage << '\n';
+                std::fprintf(file, "\n%s\n", dockingMessage.c_str());
                 break;
             }
         }
@@ -182,8 +190,10 @@ int main(int argc, char *argv[]) {
                     context.currentState,
                     context.currentTime),
                 finalDistance);
-            std::printf("Стикування не відбулося. Кінцева відстань: %.3lf м\n", finalDistance);
-            std::fprintf(file, "\nСтикування не відбулося. Кінцева відстань: %.3lf м\n", finalDistance);
+            const std::string failureMessage =
+                usermsg::getDockingFailureMessage(language, finalDistance);
+            std::cout << failureMessage << '\n';
+            std::fprintf(file, "\n%s\n", failureMessage.c_str());
         }
 
         context.stage = "shutdown";
@@ -210,8 +220,11 @@ int main(int argc, char *argv[]) {
             std::fclose(file);
         }
 
-        std::cerr << "Помилка: " << e.userMessage() << '\n'
-                  << "Код помилки: " << e.errorId() << '\n';
+        std::cerr << usermsg::buildFullUserErrorMessage(
+                         language,
+                         e.userMessage(),
+                         e.errorId())
+                  << '\n';
         return 2;
     } catch (const std::exception &e) {
         const std::string errorId = errors::generateErrorId();
@@ -230,7 +243,11 @@ int main(int argc, char *argv[]) {
             std::fclose(file);
         }
 
-        std::cerr << "Критична помилка. Код помилки: " << errorId << '\n';
+        std::cerr << usermsg::buildFullUserErrorMessage(
+                         language,
+                         usermsg::getUnknownFailureMessage(language),
+                         errorId)
+                  << '\n';
         return 3;
     } catch (...) {
         const std::string errorId = errors::generateErrorId();
@@ -248,7 +265,11 @@ int main(int argc, char *argv[]) {
             std::fclose(file);
         }
 
-        std::cerr << "Невідома критична помилка. Код помилки: " << errorId << '\n';
+        std::cerr << usermsg::buildFullUserErrorMessage(
+                         language,
+                         usermsg::getUnknownFailureMessage(language),
+                         errorId)
+                  << '\n';
         return 4;
     }
 }
