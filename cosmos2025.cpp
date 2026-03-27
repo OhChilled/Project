@@ -1,16 +1,16 @@
-﻿#include "library.h"
-#include "logger.h"
-#include "error_utils.h"
+﻿#include "error_utils.h"
 #include "errors.h"
+#include "execution_context.h"
+#include "library.h"
+#include "logger.h"
 
+#include <cmath>
 #include <cstdio>
 #include <exception>
 #include <iostream>
-#include <limits>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <windows.h>
-#include <cmath>
 
 constexpr double OMEGA = 0.001;
 constexpr double INITIAL_VELOCITY = 0.01;
@@ -31,145 +31,162 @@ int main(int argc, char *argv[]) {
     spdlog::info("Встановлений мінімальний рівень логування: {}", logLevel);
 
     FILE *file = nullptr;
-    double t = TIME_START;
 
-    State state{
-        .x1 = INITIAL_POSITION,
-        .x0 = INITIAL_VELOCITY,
-        .y1 = INITIAL_POSITION,
-        .y0 = INITIAL_VELOCITY,
-    };
-
-    try {
-        const Params params{
+    ExecutionContext context{
+        .runtimeParams = Params{
             .omega = OMEGA,
             .ax = 0.0,
             .ay = 0.0,
             .h = TIME_STEP,
             .Rcrit = DOCKING_RADIUS,
-        };
+        },
+        .currentState = State{
+            .x1 = INITIAL_POSITION,
+            .x0 = INITIAL_VELOCITY,
+            .y1 = INITIAL_POSITION,
+            .y0 = INITIAL_VELOCITY,
+        },
+        .currentTime = TIME_START,
+        .stage = "startup",
+        .paramsInitialized = false,
+    };
 
-        Params runtimeParams = params;
-
+    try {
+        context.stage = "input";
         spdlog::info("Початок введення параметрів керування");
         std::cout << "Введіть ax, ay: ";
 
-        if (!(std::cin >> runtimeParams.ax >> runtimeParams.ay)) {
-            const std::string errorId = errors::generateErrorId();
+        if (!(std::cin >> context.runtimeParams.ax >> context.runtimeParams.ay)) {
             throw AppError(
-                errorId,
+                errors::generateErrorId(),
                 "Не вдалося зчитати параметри керування.",
                 "Помилка введення параметрів ax та ay");
         }
 
-        if (runtimeParams.h <= 0.0) {
-            const std::string errorId = errors::generateErrorId();
+        context.paramsInitialized = true;
+
+        if (context.runtimeParams.h <= 0.0) {
             throw AppError(
-                errorId,
+                errors::generateErrorId(),
                 "Некоректний крок моделювання.",
                 "Параметр h має бути більшим за 0");
         }
 
-        if (runtimeParams.Rcrit <= 0.0) {
-            const std::string errorId = errors::generateErrorId();
+        if (context.runtimeParams.Rcrit <= 0.0) {
             throw AppError(
-                errorId,
+                errors::generateErrorId(),
                 "Некоректний радіус стикування.",
                 "Параметр Rcrit має бути більшим за 0");
         }
 
-        spdlog::info(
-            "Параметри керування зчитано: {}",
-            errors::buildParamsContext(runtimeParams));
+        spdlog::info("Параметри ініціалізовано: {}", errors::buildParamsContext(context.runtimeParams));
 
+        context.stage = "open_output_file";
         fopen_s(&file, "cosm2425.dan", "w");
         if (file == nullptr) {
-            const std::string errorId = errors::generateErrorId();
             throw AppError(
-                errorId,
+                errors::generateErrorId(),
                 "Не вдалося відкрити файл результатів.",
                 "Не вдалося відкрити файл cosm2425.dan для запису");
         }
 
         spdlog::info("Файл результатів cosm2425.dan успішно відкрито");
+        spdlog::info("Логи також записуються у файл logs/cosmos.log");
 
         std::fprintf(file, "Параметри моделювання:\n");
         std::fprintf(file, "omega = %lf, ax = %lf, ay = %lf\n",
-                     runtimeParams.omega,
-                     runtimeParams.ax,
-                     runtimeParams.ay);
+                     context.runtimeParams.omega,
+                     context.runtimeParams.ax,
+                     context.runtimeParams.ay);
         std::fprintf(file, "Початкові умови: x1=%lf, x0=%lf, y1=%lf, y0=%lf\n",
-                     state.x1,
-                     state.x0,
-                     state.y1,
-                     state.y0);
+                     context.currentState.x1,
+                     context.currentState.x0,
+                     context.currentState.y1,
+                     context.currentState.y0);
         std::fprintf(file, "Крок h=%lf, Кінцевий час tk=%lf\n\n",
-                     runtimeParams.h,
+                     context.runtimeParams.h,
                      TIME_END);
         std::fprintf(file, "t\tx1\tx0\ty1\ty0\tR\n");
 
+        context.stage = "simulation";
         spdlog::info("Початок чисельного моделювання");
 
         bool docked = false;
 
-        while (t + runtimeParams.h <= TIME_END) {
-            state = rk4Step(state, runtimeParams);
-            t += runtimeParams.h;
+        while (context.currentTime + context.runtimeParams.h <= TIME_END) {
+            context.currentState = rk4Step(context.currentState, context.runtimeParams);
+            context.currentTime += context.runtimeParams.h;
 
-            if (!std::isfinite(state.x1) || !std::isfinite(state.x0) ||
-                !std::isfinite(state.y1) || !std::isfinite(state.y0)) {
-                const std::string errorId = errors::generateErrorId();
+            if (!std::isfinite(context.currentState.x1) ||
+                !std::isfinite(context.currentState.x0) ||
+                !std::isfinite(context.currentState.y1) ||
+                !std::isfinite(context.currentState.y0)) {
                 throw AppError(
-                    errorId,
+                    errors::generateErrorId(),
                     "Під час моделювання виникла чисельна помилка.",
                     "Стан системи містить нечислове або нескінченне значення");
             }
 
-            const double distance = calcR(state.x1, state.y1);
+            const double distance = calcR(context.currentState.x1, context.currentState.y1);
 
             if (!std::isfinite(distance)) {
-                const std::string errorId = errors::generateErrorId();
                 throw AppError(
-                    errorId,
+                    errors::generateErrorId(),
                     "Під час обчислення відстані сталася помилка.",
                     "Обчислена відстань R не є коректним числом");
             }
 
             std::fprintf(file,
                          "%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\n",
-                         t,
-                         state.x1,
-                         state.x0,
-                         state.y1,
-                         state.y0,
+                         context.currentTime,
+                         context.currentState.x1,
+                         context.currentState.x0,
+                         context.currentState.y1,
+                         context.currentState.y0,
                          distance);
 
             spdlog::debug(
-                "Крок моделювання: {}, R={:.3f}",
-                errors::buildStateContext(state, t),
+                "Крок моделювання: {}; R={:.3f}",
+                errors::buildExecutionContext(
+                    context.stage,
+                    context.runtimeParams,
+                    context.currentState,
+                    context.currentTime),
                 distance);
 
-            if (shouldDock(distance, runtimeParams.Rcrit)) {
+            if (shouldDock(distance, context.runtimeParams.Rcrit)) {
                 docked = true;
+                context.stage = "docking";
                 spdlog::info(
-                    "Стикування відбулося: {}, R={:.3f}",
-                    errors::buildStateContext(state, t),
+                    "Стикування відбулося: {}; R={:.3f}",
+                    errors::buildExecutionContext(
+                        context.stage,
+                        context.runtimeParams,
+                        context.currentState,
+                        context.currentTime),
                     distance);
-                std::printf("Стикування відбулося в момент t = %.3lf с\n", t);
-                std::fprintf(file, "\nСтикування відбулося в момент t = %.3lf с\n", t);
+                std::printf("Стикування відбулося в момент t = %.3lf с\n", context.currentTime);
+                std::fprintf(file, "\nСтикування відбулося в момент t = %.3lf с\n", context.currentTime);
                 break;
             }
         }
 
         if (!docked) {
-            const double finalDistance = calcR(state.x1, state.y1);
+            context.stage = "finish_without_docking";
+            const double finalDistance = calcR(context.currentState.x1, context.currentState.y1);
             spdlog::warn(
-                "Стикування не відбулося. Контекст: {}, R={:.3f}",
-                errors::buildStateContext(state, t),
+                "Стикування не відбулося: {}; R={:.3f}",
+                errors::buildExecutionContext(
+                    context.stage,
+                    context.runtimeParams,
+                    context.currentState,
+                    context.currentTime),
                 finalDistance);
             std::printf("Стикування не відбулося. Кінцева відстань: %.3lf м\n", finalDistance);
             std::fprintf(file, "\nСтикування не відбулося. Кінцева відстань: %.3lf м\n", finalDistance);
         }
+
+        context.stage = "shutdown";
 
         std::fclose(file);
         file = nullptr;
@@ -179,12 +196,15 @@ int main(int argc, char *argv[]) {
         return 0;
     } catch (const AppError &e) {
         spdlog::error(
-            "AppError [{}]: {}. Деталі: {}. Параметри: {}. Стан: {}",
+            "AppError [{}]: {}. Деталі: {}. Контекст: {}",
             e.errorId(),
             e.userMessage(),
             e.what(),
-            "runtime parameters unavailable or partially initialized",
-            errors::buildStateContext(state, t));
+            errors::buildExecutionContext(
+                context.stage,
+                context.runtimeParams,
+                context.currentState,
+                context.currentTime));
 
         if (file != nullptr) {
             std::fclose(file);
@@ -197,10 +217,14 @@ int main(int argc, char *argv[]) {
         const std::string errorId = errors::generateErrorId();
 
         spdlog::critical(
-            "std::exception [{}]: {}. Стан: {}",
+            "std::exception [{}]: {}. Контекст: {}",
             errorId,
             e.what(),
-            errors::buildStateContext(state, t));
+            errors::buildExecutionContext(
+                context.stage,
+                context.runtimeParams,
+                context.currentState,
+                context.currentTime));
 
         if (file != nullptr) {
             std::fclose(file);
@@ -212,9 +236,13 @@ int main(int argc, char *argv[]) {
         const std::string errorId = errors::generateErrorId();
 
         spdlog::critical(
-            "Невідоме критичне виключення [{}]. Стан: {}",
+            "Невідоме критичне виключення [{}]. Контекст: {}",
             errorId,
-            errors::buildStateContext(state, t));
+            errors::buildExecutionContext(
+                context.stage,
+                context.runtimeParams,
+                context.currentState,
+                context.currentTime));
 
         if (file != nullptr) {
             std::fclose(file);

@@ -6,6 +6,6 @@
 namespace logging {
 void initLogger(const std::string &level);
 std::string resolveLogLevel(int argc, char *argv[]);
-}
+} // namespace logging
 
 #endif // LOGGER_H

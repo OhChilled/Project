@@ -1,9 +1,13 @@
 #include "logger.h"
 
 #include <cstdlib>
+#include <filesystem>
+#include <memory>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -34,7 +38,15 @@ spdlog::level::level_enum parseLogLevel(const std::string &level) {
 namespace logging {
 
 void initLogger(const std::string &level) {
-    auto logger = spdlog::stdout_color_mt("cosmos");
+    std::filesystem::create_directories("logs");
+
+    auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+        "logs/cosmos.log", 1024 * 1024, 3);
+
+    std::vector<spdlog::sink_ptr> sinks{consoleSink, fileSink};
+
+    auto logger = std::make_shared<spdlog::logger>("cosmos", sinks.begin(), sinks.end());
     spdlog::set_default_logger(logger);
 
     // [2026-03-27 12:34:56.123] [INFO] [cosmos] message

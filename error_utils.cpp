@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <random>
 #include <sstream>
+#include <string>
 
 namespace errors {
 
@@ -36,6 +37,17 @@ std::string buildParamsContext(const Params &params) {
         << ", ay=" << params.ay
         << ", h=" << params.h
         << ", Rcrit=" << params.Rcrit;
+    return oss.str();
+}
+
+std::string buildExecutionContext(const std::string &stage,
+                                  const Params &params,
+                                  const State &state,
+                                  double time) {
+    std::ostringstream oss;
+    oss << "stage=" << stage
+        << "; params={" << buildParamsContext(params) << "}"
+        << "; state={" << buildStateContext(state, time) << "}";
     return oss.str();
 }
 
