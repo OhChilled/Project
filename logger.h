@@ -4,7 +4,8 @@
 #include <string>
 
 namespace logging {
-void initLogger();
+void initLogger(const std::string &level);
+std::string resolveLogLevel(int argc, char *argv[]);
 }
 
 #endif // LOGGER_H

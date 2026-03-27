@@ -15,12 +15,15 @@ constexpr double TIME_STEP = 0.01;
 constexpr double TIME_END = 7.0;
 constexpr double DOCKING_RADIUS = 1.0;
 
-int main() {
+int main(int argc, char *argv[]) {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 
-    logging::initLogger();
+    const std::string logLevel = logging::resolveLogLevel(argc, argv);
+    logging::initLogger(logLevel);
+
     spdlog::info("Програма моделювання запущена");
+    spdlog::info("Встановлений мінімальний рівень логування: {}", logLevel);
 
     FILE *file = nullptr;
 
@@ -43,13 +46,9 @@ int main() {
             return 1;
         }
 
-        spdlog::info(
-            "Параметри керування зчитано: omega={}, ax={}, ay={}, h={}, Rcrit={}",
-            runtimeParams.omega,
-            runtimeParams.ax,
-            runtimeParams.ay,
-            runtimeParams.h,
-            runtimeParams.Rcrit);
+        spdlog::info("Параметри керування зчитано: omega={}, ax={}, ay={}, h={}, Rcrit={}",
+                     runtimeParams.omega, runtimeParams.ax, runtimeParams.ay, runtimeParams.h,
+                     runtimeParams.Rcrit);
 
         fopen_s(&file, "cosm2425.dan", "w");
         if (file == nullptr) {
@@ -70,18 +69,11 @@ int main() {
         double t = TIME_START;
 
         std::fprintf(file, "Параметри моделювання:\n");
-        std::fprintf(file, "omega = %lf, ax = %lf, ay = %lf\n",
-                     runtimeParams.omega,
-                     runtimeParams.ax,
-                     runtimeParams.ay);
-        std::fprintf(file, "Початкові умови: x1=%lf, x0=%lf, y1=%lf, y0=%lf\n",
-                     state.x1,
-                     state.x0,
-                     state.y1,
-                     state.y0);
-        std::fprintf(file, "Крок h=%lf, Кінцевий час tk=%lf\n\n",
-                     runtimeParams.h,
-                     TIME_END);
+        std::fprintf(file, "omega = %lf, ax = %lf, ay = %lf\n", runtimeParams.omega,
+                     runtimeParams.ax, runtimeParams.ay);
+        std::fprintf(file, "Початкові умови: x1=%lf, x0=%lf, y1=%lf, y0=%lf\n", state.x1, state.x0,
+                     state.y1, state.y0);
+        std::fprintf(file, "Крок h=%lf, Кінцевий час tk=%lf\n\n", runtimeParams.h, TIME_END);
         std::fprintf(file, "t\tx1\tx0\ty1\ty0\tR\n");
 
         spdlog::info("Початок чисельного моделювання");
@@ -94,23 +86,12 @@ int main() {
 
             const double distance = calcR(state.x1, state.y1);
 
-            std::fprintf(file,
-                         "%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\n",
-                         t,
-                         state.x1,
-                         state.x0,
-                         state.y1,
-                         state.y0,
-                         distance);
+            std::fprintf(file, "%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\t%.3lf\n", t, state.x1, state.x0,
+                         state.y1, state.y0, distance);
 
             spdlog::debug(
                 "Крок моделювання: t={:.3f}, x1={:.3f}, x0={:.3f}, y1={:.3f}, y0={:.3f}, R={:.3f}",
-                t,
-                state.x1,
-                state.x0,
-                state.y1,
-                state.y0,
-                distance);
+                t, state.x1, state.x0, state.y1, state.y0, distance);
 
             if (shouldDock(distance, runtimeParams.Rcrit)) {
                 docked = true;
@@ -125,7 +106,8 @@ int main() {
             const double finalDistance = calcR(state.x1, state.y1);
             spdlog::warn("Стикування не відбулося. Кінцева відстань R={:.3f}", finalDistance);
             std::printf("Стикування не відбулося. Кінцева відстань: %.3lf м\n", finalDistance);
-            std::fprintf(file, "\nСтикування не відбулося. Кінцева відстань: %.3lf м\n", finalDistance);
+            std::fprintf(file, "\nСтикування не відбулося. Кінцева відстань: %.3lf м\n",
+                         finalDistance);
         }
 
         std::fclose(file);
