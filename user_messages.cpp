@@ -118,4 +118,11 @@ std::string getDockingFailureMessage(Language language, double distance) {
     return oss.str();
 }
 
+std::string getOperationIdMessage(Language language, const std::string &operationId) {
+    if (language == Language::English) {
+        return "Operation ID: " + operationId;
+    }
+    return "Ідентифікатор операції: " + operationId;
+}
+
 } // namespace usermsg

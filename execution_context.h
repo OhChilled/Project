@@ -11,6 +11,7 @@ struct ExecutionContext {
     double currentTime{0.0};
     std::string stage{"startup"};
     bool paramsInitialized{false};
+    std::string operationId{};
 };
 
 #endif // EXECUTION_CONTEXT_H

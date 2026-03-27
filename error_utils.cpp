@@ -20,6 +20,18 @@ std::string generateErrorId() {
     return oss.str();
 }
 
+std::string generateOperationId() {
+    const auto now = std::chrono::system_clock::now().time_since_epoch().count();
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dist(1000, 9999);
+
+    std::ostringstream oss;
+    oss << "OP-" << now << "-" << dist(gen);
+    return oss.str();
+}
+
 std::string buildStateContext(const State &state, double time) {
     std::ostringstream oss;
     oss << "t=" << std::fixed << std::setprecision(3) << time

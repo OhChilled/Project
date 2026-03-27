@@ -54,7 +54,11 @@ int main(int argc, char *argv[]) {
         .currentTime = TIME_START,
         .stage = "startup",
         .paramsInitialized = false,
+        .operationId = errors::generateOperationId(),
     };
+
+    spdlog::info("Operation ID: {}", context.operationId);
+    std::cout << usermsg::getOperationIdMessage(language, context.operationId) << '\n';
 
     try {
         context.stage = "input";
@@ -99,6 +103,7 @@ int main(int argc, char *argv[]) {
         spdlog::info("Файл результатів cosm2425.dan успішно відкрито");
         spdlog::info("Логи також записуються у файл logs/cosmos.log");
 
+        std::fprintf(file, "Operation ID: %s\n", context.operationId.c_str());
         std::fprintf(file, "Параметри моделювання:\n");
         std::fprintf(file, "omega = %lf, ax = %lf, ay = %lf\n",
                      context.runtimeParams.omega,
@@ -206,7 +211,7 @@ int main(int argc, char *argv[]) {
         return 0;
     } catch (const AppError &e) {
         spdlog::error(
-            "AppError [{}]: {}. Деталі: {}. Контекст: {}",
+            "AppError [{}]: {}. Деталі: {}. Контекст: {}. Operation ID: {}",
             e.errorId(),
             e.userMessage(),
             e.what(),
@@ -214,7 +219,8 @@ int main(int argc, char *argv[]) {
                 context.stage,
                 context.runtimeParams,
                 context.currentState,
-                context.currentTime));
+                context.currentTime),
+            context.operationId);
 
         if (file != nullptr) {
             std::fclose(file);
@@ -230,14 +236,15 @@ int main(int argc, char *argv[]) {
         const std::string errorId = errors::generateErrorId();
 
         spdlog::critical(
-            "std::exception [{}]: {}. Контекст: {}",
+            "std::exception [{}]: {}. Контекст: {}. Operation ID: {}",
             errorId,
             e.what(),
             errors::buildExecutionContext(
                 context.stage,
                 context.runtimeParams,
                 context.currentState,
-                context.currentTime));
+                context.currentTime),
+            context.operationId);
 
         if (file != nullptr) {
             std::fclose(file);
@@ -253,13 +260,14 @@ int main(int argc, char *argv[]) {
         const std::string errorId = errors::generateErrorId();
 
         spdlog::critical(
-            "Невідоме критичне виключення [{}]. Контекст: {}",
+            "Невідоме критичне виключення [{}]. Контекст: {}. Operation ID: {}",
             errorId,
             errors::buildExecutionContext(
                 context.stage,
                 context.runtimeParams,
                 context.currentState,
-                context.currentTime));
+                context.currentTime),
+            context.operationId);
 
         if (file != nullptr) {
             std::fclose(file);

@@ -25,6 +25,8 @@ std::string getInputPrompt(Language language);
 std::string getDockingSuccessMessage(Language language, double time);
 std::string getDockingFailureMessage(Language language, double distance);
 
+std::string getOperationIdMessage(Language language, const std::string &operationId);
+
 } // namespace usermsg
 
 #endif // USER_MESSAGES_H
