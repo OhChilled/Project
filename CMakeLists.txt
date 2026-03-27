@@ -11,6 +11,7 @@ add_executable(untitled2
         cosmos2025.cpp
         library.cpp
         logger.cpp
+        error_utils.cpp
 )
 target_include_directories(untitled2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(untitled2 PRIVATE spdlog::spdlog)
